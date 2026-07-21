@@ -41,6 +41,19 @@ export PATH="$PATH:$BIN_PATH"
 echo "🧠 Applying Istio Demo Profile..."
 sudo KUBECONFIG=/etc/rancher/k3s/k3s.yaml "$BIN_PATH/istioctl" install --set profile=demo -y
 
+# --- 3. INGRESS TRANSLATION SETUP ---
+echo "🪄 Configuring Istio Ingress translation (IngressClass)..."
+sudo KUBECONFIG=/etc/rancher/k3s/k3s.yaml kubectl apply -f - <<EOF
+apiVersion: networking.k8s.io/v1
+kind: IngressClass
+metadata:
+  name: istio
+  annotations:
+    ingressclass.kubernetes.io/is-default-class: "true"
+spec:
+  controller: istio.io/ingress-controller
+EOF
+
 echo "✅ Installation complete!"
 echo "------------------------------------------------------------"
 echo "👉 VERIFICATION:"

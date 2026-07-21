@@ -31,8 +31,16 @@ This setup provides a lightweight, high-performance cluster that avoids the "mag
    kubectl get pods -n istio-system
    ```
 
-## 📡 Networking Capabilities
-This environment is optimized for testing multi-interface connectivity (e.g., Local LAN vs. VPN). By using the Istio Ingress Gateway, you can route traffic based on specific hosts or IPs, making it ideal for agents that need to be reachable across different network boundaries.
+## 📡 Networking & Ingress Support
+This environment is optimized for testing multi-interface connectivity and high-grade traffic management.
+
+### Classic Ingress Compatibility
+Unlike a standard Istio installation, this setup includes an **IngressClass** named `istio`. This allows you to install traditional Helm charts that use the standard Kubernetes `Ingress` resource without modification. 
+
+Just ensure your chart's values are set to:
+`ingressClassName: istio`
+
+Istio will automatically translate these classic resources into its own routing logic in real-time.
 
 ## 📝 Notes
 - **No Traefik**: We explicitly disable Traefik during k3s installation to prevent conflicts with Istio and to force a "clean slate" networking architecture.
