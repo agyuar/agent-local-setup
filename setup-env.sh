@@ -16,30 +16,27 @@ echo "🔑 Configuring kubectl permissions..."
 sudo chmod 644 /etc/rancher/k3s/k3s.yaml
 export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 
-# --- 2. ISTIO INSTALLATION ---
-echo "🌐 Installing Istio Service Mesh..."
-ISTIO_DIR="$HOME/.openclaw/workspace/istio-setup"
-mkdir -p "$ISTIO_DIR"
-cd "$ISTIO_DIR"
+# --- 2. ISTIO INSTALLATION (via Helm) ---
+echo "🌐 Installing Istio Service Mesh via Helm..."
 
-# Download and extract Istio
-curl -L https://istio.io/downloadIstio | sh -
+# Ensure KUBECONFIG is available for helm
+export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 
-# Find the extracted version directory
-VERSION_DIR=$(ls -d istio-* | head -n 1)
-BIN_PATH="$ISTIO_DIR/$VERSION_DIR/bin"
+# Add Istio Helm repository
+sudo KUBECONFIG=$KUBECONFIG helm repo add istio https://istio-release.storage.googleapis.com/charts
+sudo KUBECONFIG=$KUBECONFIG helm repo update
 
-if [ -z "$BIN_PATH" ]; then
-    echo "❌ Istio binary not found!"
-    exit 1
-fi
+# Install Istio Base (CRDs)
+echo "📦 Installing Istio Base..."
+sudo KUBECONFIG=$KUBECONFIG helm install istio-base istio/base -n istio-system --create-namespace
 
-# Add istioctl to PATH for the duration of this script
-export PATH="$PATH:$BIN_PATH"
+# Install Istiod (Control Plane)
+echo "🧠 Installing Istiod..."
+sudo KUBECONFIG=$KUBECONFIG helm install istiod istio/istiod -n istio-system --wait
 
-# Install Istio using the demo profile (all features enabled)
-echo "🧠 Applying Istio Demo Profile..."
-sudo KUBECONFIG=/etc/rancher/k3s/k3s.yaml "$BIN_PATH/istioctl" install --set profile=demo -y
+# Install Istio Ingress Gateway
+echo "🚪 Installing Istio Ingress Gateway..."
+sudo KUBECONFIG=$KUBECONFIG helm install istio-ingressgateway istio/gateway -n istio-system
 
 # --- 3. INGRESS TRANSLATION SETUP ---
 echo "🪄 Configuring Istio Ingress translation (IngressClass)..."
