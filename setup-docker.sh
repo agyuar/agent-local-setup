@@ -21,12 +21,10 @@ if ! command -v docker >/dev/null 2>&1; then
   sudo mkdir -p /etc/apt/keyrings
   curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg --yes
 
-  # 3. Repositorio oficial (codename real de la distro, ej. noble/plucky)
+  # 3. Repositorio oficial (codename real de la distro, ej. noble/resolute)
+  #    Una sola línea: los list files de dos líneas rompen con dpkg >= 1.22.6 (Ubuntu 24.10+).
   CODENAME=$(lsb_release -cs 2>/dev/null || . /etc/os-release && echo "$VERSION_CODENAME")
-  {
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu"
-    echo "  $CODENAME stable"
-  } | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+  echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $CODENAME stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
   # 4. Instalación
   sudo apt-get update
