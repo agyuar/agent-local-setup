@@ -8,6 +8,17 @@ This setup provides a lightweight, high-performance cluster that avoids the "mag
 ## 🛠️ Components
 - **k3s**: Lightweight Kubernetes distribution (Traefik disabled).
 - **Istio**: Service Mesh for advanced traffic management, observability, and security.
+- **k3s-static interface**: A dummy interface (`192.168.64.99/24`) so the cluster keeps a stable node identity even if the WiFi/WAN IP changes.
+
+## 🌐 Static IP (k3s node identity)
+The setup creates a dummy interface `k3s-static` with `192.168.64.99` and points k3s at it via `node-ip` in `/etc/rancher/k3s/config.yaml`. This is what `setup-env.sh` and `setup-k3s.sh` do internally, but you can manage it standalone:
+
+```bash
+./setup-static-ip.sh          # create interface + persist via systemd + set node-ip
+./setup-static-ip.sh check    # verify state (read-only), exit 0 if healthy
+./setup-static-ip.sh remove   # tear down interface, service, and config
+```
+The script is **idempotent**, persists across reboots via `k3s-static-ip.service` (ordered before `k3s.service`), and restarts k3s if needed so it actually (re)binds the static IP.
 
 ## 🚀 Quick Start
 
