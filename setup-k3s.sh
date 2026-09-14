@@ -15,18 +15,27 @@ echo "🌐 Configuring static dummy interface for k3s stability..."
 bash "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/setup-static-ip.sh"
 
 # 2. Install k3s without traefik
+#    The admin kubeconfig is written 640 root:adm (--write-kubeconfig-mode/-group),
+#    so members of the `adm` group can use kubectl WITHOUT sudo.
 echo "📦 Installing k3s (without Traefik)..."
-curl -sfL https://get.k3s.io | sudo sh -s - server --disable traefik
+curl -sfL https://get.k3s.io | sudo sh -s - server --disable traefik \
+  --write-kubeconfig-mode 640 --write-kubeconfig-group adm
 
-# 4. Set permissions for kubeconfig so it can be used by the current user
-echo "🔑 Configuring kubectl permissions..."
-sudo chmod 644 /etc/rancher/k3s/k3s.yaml
+# 3. Make sure the current user can read the kubeconfig (group adm)
+echo "🔑 Checking adm group membership for $(whoami)..."
+if id -nG "$(whoami)" | tr ' ' '\n' | grep -qx adm; then
+  echo "✅ $(whoami) is in adm — kubectl works without sudo."
+else
+  echo "⚠️  $(whoami) is NOT in adm — adding..."
+  sudo usermod -aG adm "$(whoami)"
+  echo "   (group membership applies from the next login)"
+fi
 
-# 5. Export KUBECONFIG for the current session
+# 4. Export KUBECONFIG for the current session
 export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
 
 echo "✅ Installation complete!"
-echo "👉 Run 'sudo kubectl get nodes' to verify (node IP should be 192.168.64.99)."
+echo "👉 Run 'kubectl get nodes' to verify (no sudo needed, node IP should be 192.168.64.99)."
 echo "💡 Tip: Add 'export KUBECONFIG=/etc/rancher/k3s/k3s.yaml' to your shell profile."
 echo "🔄 If k3s was already running before the interface existed: sudo systemctl restart k3s"
 echo "✅ The interface is idempotent and persists across reboots (k3s-static-ip.service)."

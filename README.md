@@ -36,6 +36,8 @@ The script is **idempotent**, persists across reboots via `k3s-static-ip.service
    export PATH="$PATH:[ISTIO_PATH]/bin" 
    ```
 
+   > **Access model**: k3s writes the admin kubeconfig as `640 root:adm` (`--write-kubeconfig-mode 640 --write-kubeconfig-group adm`), so every user in the `adm` group uses `kubectl` **without sudo**. The scripts auto-add the installing user to `adm` (applies from the next login). If your user lacks permissions after setup, re-login or `sg adm -c kubectl ...` to check.
+
 3. **Verification**:
    ```bash
    kubectl get nodes
@@ -55,4 +57,5 @@ Istio will automatically translate these classic resources into its own routing 
 
 ## 📝 Notes
 - **No Traefik**: We explicitly disable Traefik during k3s installation to prevent conflicts with Istio and to force a "clean slate" networking architecture.
+- **kubectl without sudo**: the admin kubeconfig is `640 root:adm`, not world-readable (the old `chmod 644` is gone). Membership in group `adm` is the gate; add other users with `sudo usermod -aG adm <user>`.
 - **Demo Profile**: The script installs the `demo` profile of Istio, which is intended for testing and development (includes most features enabled).

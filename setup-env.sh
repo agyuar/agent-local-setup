@@ -12,13 +12,20 @@ echo "🌐 Configuring static dummy interface for k3s..."
 bash "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/setup-static-ip.sh"
 
 # --- 2. K3S INSTALLATION ---
+#    The admin kubeconfig is written 640 root:adm (--write-kubeconfig-mode/-group)
+#    so `adm` members can use kubectl WITHOUT sudo (no world-readable kubeconfig).
 echo "📦 Installing k3s (without Traefik)..."
-curl -sfL https://get.k3s.io | sudo sh -s - server --disable traefik
+curl -sfL https://get.k3s.io | sudo sh -s - server --disable traefik \
+  --write-kubeconfig-mode 640 --write-kubeconfig-group adm
 
-# Set permissions for kubeconfig so it can be used by the current user without sudo
-echo "🔑 Configuring kubectl permissions..."
-sudo chmod 644 /etc/rancher/k3s/k3s.yaml
 export KUBECONFIG=/etc/rancher/k3s/k3s.yaml
+
+# Make sure the current user is in adm (needs a new login session to take effect there)
+if ! id -nG "$(whoami)" | tr ' ' '\n' | grep -qx adm; then
+  echo "⚠️  $(whoami) is NOT in adm — adding..."
+  sudo usermod -aG adm "$(whoami)"
+  echo "   (group membership applies from the next login)"
+fi
 
 # If k3s was already running before the static interface existed, restart it
 # so it (re)binds to 192.168.64.99.
@@ -73,6 +80,6 @@ echo "   - Run 'sudo kubectl get pods -n istio-system' to check Istio."
 echo ""
 echo "💡 ENVIRONMENT CONFIGURATION:"
 echo "   To use the tools without sudo, add these to your ~/.bashrc or ~/.zshrc:"
-echo "   export KUBECONFIG=/etc/rancher/k3s/k3s.yaml"
+echo "   export KUBECONFIG=/etc/rancher/k3s/k3s.yaml   (works without sudo: kubeconfig is 640 root:adm; your user must be in adm — a new login applies group membership)"
 echo "   export PATH=\"\$PATH:$BIN_PATH\""
 echo "------------------------------------------------------------"
