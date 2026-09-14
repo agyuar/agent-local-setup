@@ -11,6 +11,12 @@ echo "🚀 Starting full agent-local-setup..."
 echo "🌐 Configuring static dummy interface for k3s..."
 bash "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/setup-static-ip.sh"
 
+# --- 1b. BASE TOOLING (idempotent): make is needed by several downstream builds
+#    (kustomize, local images, the blog toolchain, etc.)
+echo "🔧 Ensuring base tooling (make)..."
+sudo apt-get update -q 2>/dev/null || true
+sudo apt-get install -y make
+
 # --- 2. K3S INSTALLATION ---
 #    The admin kubeconfig is written 640 root:adm (--write-kubeconfig-mode/-group)
 #    so `adm` members can use kubectl WITHOUT sudo (no world-readable kubeconfig).

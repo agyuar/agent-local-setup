@@ -14,6 +14,12 @@ echo "🚀 Starting agent-local-setup..."
 echo "🌐 Configuring static dummy interface for k3s stability..."
 bash "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/setup-static-ip.sh"
 
+# 0. Base tooling (idempotent): make is needed by several downstream builds
+#    (kustomize, local images, the blog toolchain, etc.)
+echo "🔧 Ensuring base tooling (make)..."
+sudo apt-get update -q 2>/dev/null || true
+sudo apt-get install -y make
+
 # 2. Install k3s without traefik
 #    The admin kubeconfig is written 640 root:adm (--write-kubeconfig-mode/-group),
 #    so members of the `adm` group can use kubectl WITHOUT sudo.
